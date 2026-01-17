@@ -3,14 +3,14 @@
 #include "usbh_processor.h"
 #define DEBUG_USB
 
-bool keyboardKeys[0xFF];
-uint8_t mouseButtons;
-int16_t mousex = 0;
-int16_t mousey = 0;
-int16_t mouseRangeMinX = 0;
-int16_t mouseRangeMinY = 0;
-int16_t mouseRangeMaxX = 0;
-int16_t mouseRangeMaxY = 0;
+volatile bool keyboardKeys[0xFF];
+volatile uint8_t mouseButtons;
+volatile int16_t mousex = 0;
+volatile int16_t mousey = 0;
+volatile int16_t mouseRangeMinX = 0;
+volatile int16_t mouseRangeMinY = 0;
+volatile int16_t mouseRangeMaxX = 0;
+volatile int16_t mouseRangeMaxY = 0;
 
 
 
