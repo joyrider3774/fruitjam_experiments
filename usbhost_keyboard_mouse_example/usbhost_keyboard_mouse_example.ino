@@ -65,19 +65,27 @@ void setup() {
   setMouseRange(0,0, tft.width(), tft.height());
   setMouse(tft.width() >> 1, tft.height()>>1);
   setKeyDownUpCallBack(KeyboardCallBack);
+  tft.setTextColor(tft.color565(0,0,0));
 }
 
 
 
 void loop() {
-  if(mouseButtonPressed(0))
+  if (keyPressed(0x2C)) // space key
+  {
+    tft.fillScreen(tft.color565(0,255,0));
+    tft.setCursor(25,25);
+    tft.setTextSize(5);
+    tft.println("SPACE KEY");
+    tft.setTextSize(1);
+  }
+  else if(mouseButtonPressed(0))
     tft.fillScreen(tft.color565(0,0,255));
   else if(mouseButtonPressed(1))
     tft.fillScreen(tft.color565(255,0,0));
   else
-    tft.fillScreen(tft.color565(255,255,255));
-  tft.setTextColor(tft.color565(0,0,0));
-  tft.setCursor(0,0);
+    tft.fillScreen(tft.color565(255,255,255)); 
+    tft.setCursor(0,0); 
   char Text[40];
   if(lastkey != 0)
   {
@@ -88,6 +96,7 @@ void loop() {
   {
     tft.println("Press or Release a key");
   }
+  
 
   int16_t mousex = getMouseX();
   int16_t mousey = getMouseY();
