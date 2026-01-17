@@ -8,6 +8,8 @@
 #include "usbh_processor.h"
 #include "hardware/irq.h"
 
+#undef DEBUG_USB_DISCONNECTS
+
 #if defined(ADAFRUIT_FEATHER_RP2350_HSTX)
 DVHSTXPinout pinConfig = ADAFRUIT_FEATHER_RP2350_CFG;
 #elif defined(ADAFRUIT_METRO_RP2350)
@@ -74,12 +76,39 @@ void setup()
 
 void loop()
 {
+#ifdef DEBUG_USB_DISCONNECTS
+  static uint32_t lastLog = 0;
+  static bool lastVbusState = true;
+  static int loopCount = 0;
+#endif
   USBHost.task();
+#ifdef DEBUG_USB_DISCONNECTS
+  loopCount++;
+  
+  // Log status every second
+  if (millis() - lastLog > 1000) {
+    bool vbusState = digitalRead(PIN_USB_HOST_VBUS);
+    
+    Serial.printf("[%6lu ms] Loops: %d, VBUS: %d", 
+                  millis(), loopCount, vbusState);
+    
+    // Check if VBUS changed
+    if (vbusState != lastVbusState) {
+      Serial.print(" <<< VBUS CHANGED!");
+    }
+    Serial.println();
+    
+    loopCount = 0;
+    lastVbusState = vbusState;
+    lastLog = millis();
+  }
+#endif  
+  delayMicroseconds(100);
 }
 
 
 void setup1() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   if (!tft.begin()) { // Blink LED if failed
     Serial.printf("failed to setup display\n");
     pinMode(LED_BUILTIN, OUTPUT);
