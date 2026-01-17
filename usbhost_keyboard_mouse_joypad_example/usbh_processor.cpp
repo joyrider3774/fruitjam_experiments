@@ -1,7 +1,60 @@
 #include "Adafruit_TinyUSB.h"
 #include "tusb.h"
 #include "usbh_processor.h"
+
 #define DEBUG_USB
+
+#define REPORT_NONE 0xFF
+
+typedef struct 
+{
+    uint16_t productid;
+    uint16_t vendorid;
+    uint8_t buttonLeftReport;
+    uint8_t buttonLeftPressedValue;
+    bool    buttonLeftIsMask;
+    uint8_t buttonRightReport;
+    uint8_t buttonRightPressedValue;
+    bool    buttonRightIsMask;
+    uint8_t buttonUpReport;
+    uint8_t buttonUpPressedValue;
+    bool    buttonUpIsMask;
+    uint8_t buttonDownReport;
+    uint8_t buttonDownPressedValue;
+    bool    buttonDownIsMask;
+    uint8_t buttonAReport;
+    uint8_t buttonAPressedValue;
+    bool    buttonAIsMask;
+    uint8_t buttonBReport;
+    uint8_t buttonBPressedValue;
+    bool    buttonBIsMask;
+    uint8_t buttonXReport;
+    uint8_t buttonXPressedValue;
+    bool    buttonXIsMask;
+    uint8_t buttonYReport;
+    uint8_t buttonYPressedValue;
+    bool    buttonYIsMask;
+    uint8_t buttonLeftShoulderReport;
+    uint8_t buttonLeftShoulderPressedValue;
+    bool    buttonLeftShoulderIsMask;
+    uint8_t buttonRightShoulderReport;
+    uint8_t buttonRightShoulderPressedValue;
+    bool    buttonRightShoulderIsMask;
+    uint8_t buttonSelectReport;
+    uint8_t buttonSelectPressedValue;
+    bool    buttonSelectIsMask;
+    uint8_t buttonStartReport;
+    uint8_t buttonStartPressedValue;
+    bool    buttonStartIsMask;
+} GamePadReport;
+
+GamePadReport GamePadConfigs[] = {
+    //{productid, vendorid, L,LV,LM,R,RV,RM,U,UV,UM,D,DV,DM,A,AV,AM,B,BV,BM,X,XV,XM,Y,YV,YM,LS,LSV,LSM,RS,RSV,RSM,SELECT,SELECTV,SELECTM,START,STARTV,STARTM}
+    //snes padd from adafruit (not tested)
+    {0,0,0,0x00,false,0,0xFF,false,1,0x00,false,1,0xFF,false,5,0x2F,true,5,0x4F,true, 5,0x1F,true, 5,0x8F,true,6,0x01,true,6,0x02,true,6,0x10,true,6,0x20,true},
+    //ps1 none dualshock using my adaptor
+    {34918,2341,2,0x00,false,2,0xFF,false,3,0x00,false,3,0xFF,false,0,0x04,true,0,0x02,true,0,0x08,true,0,0x01,true,0,0x40,true,0,0x80,true,1,0xf2,false,1,0xf1,false},
+};
 
 volatile bool keyboardKeys[0xFF];
 volatile uint8_t mouseButtons;
@@ -11,8 +64,7 @@ volatile int16_t mouseRangeMinX = 0;
 volatile int16_t mouseRangeMinY = 0;
 volatile int16_t mouseRangeMaxX = 0;
 volatile int16_t mouseRangeMaxY = 0;
-
-
+volatile uint32_t joystickButtons = 0;
 
 onKeyboardKeyDownUpCallback keyboardUpDownCallback = NULL;
 
@@ -53,9 +105,15 @@ int16_t getMouseY()
     return mousey;
 }
 
+bool gamepadButtonPressed(uint32_t button)
+{
+    return joystickButtons & button;
+}
+
+
 bool mouseButtonPressed(uint8_t button)
 {
-    return mouseButtons & 1 << button;
+    return mouseButtons & (1 << button);
 }
 
 bool keyPressed(uint8_t key)
@@ -164,13 +222,15 @@ const char* getKeyName(uint8_t key)
 // Each HID instance can has multiple reports
 static struct
 {
+    uint16_t productId;
+    uint16_t vendorId;
     uint8_t report_count;
     tuh_hid_report_info_t report_info[MAX_REPORT];
 }hid_info[CFG_TUH_HID];
 
 static void process_kbd_report(hid_keyboard_report_t const *report);
 static void process_mouse_report(hid_mouse_report_t const * report);
-static void process_joystick_report(size_t len, const uint8_t *report);
+static void process_joystick_report(size_t len, const uint8_t *report, uint16_t productid, uint16_t vendorid);
 static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len);
 
 // Invoked when device with hid interface is mounted
@@ -191,6 +251,12 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
     // Therefore for this simple example, we only need to parse generic report descriptor (with built-in parser)
     if ( itf_protocol == HID_ITF_PROTOCOL_NONE )
     {
+        tusb_desc_device_t desc_device;
+        if(tuh_descriptor_get_device(dev_addr, &desc_device, sizeof(tusb_desc_device_t), NULL, 0))
+        {
+            hid_info[instance].productId = desc_device.idProduct;
+            hid_info[instance].vendorId = desc_device.idVendor;
+        }
         hid_info[instance].report_count = tuh_hid_parse_report_descriptor(hid_info[instance].report_info, MAX_REPORT, desc_report, desc_len);
         debug_printf("HID has %u reports \r\n", hid_info[instance].report_count);
     }
@@ -347,13 +413,40 @@ static void process_mouse_report(hid_mouse_report_t const * report)
 // Joystick / Joypad
 //--------------------------------------------------------------------+
 
-static void process_joystick_report(size_t len, const uint8_t *report)
+inline uint32_t processButton(uint8_t buttonReport, uint8_t buttonValue, bool buttonIsMask, const uint8_t *report, uint32_t buttonReturnValue) 
 {
+    if(buttonReport == REPORT_NONE)
+        return 0;
+    if (buttonIsMask)
+        return (report[buttonReport] & buttonValue) == buttonValue ? buttonReturnValue: 0;
+    else
+        return report[buttonReport] == buttonValue ? buttonReturnValue: 0;
 
-    if (report[0] == 0) return;
+}
 
+static void process_joystic_gamepadconfig(uint8_t configindex, const uint8_t *report)
+{
+    uint32_t val = 0;
+    GamePadReport * c = &GamePadConfigs[configindex];
+    val |= processButton(c->buttonAReport, c->buttonAPressedValue, c->buttonAIsMask, report, GAMEPAD_A);
+    val |= processButton(c->buttonBReport, c->buttonBPressedValue, c->buttonBIsMask, report, GAMEPAD_B);
+    val |= processButton(c->buttonXReport, c->buttonXPressedValue, c->buttonXIsMask, report, GAMEPAD_X);
+    val |= processButton(c->buttonYReport, c->buttonYPressedValue, c->buttonYIsMask, report, GAMEPAD_Y);
+    val |= processButton(c->buttonLeftShoulderReport, c->buttonLeftShoulderPressedValue, c->buttonLeftShoulderIsMask, report, GAMEPAD_LEFT_SHOULDER);
+    val |= processButton(c->buttonRightShoulderReport, c->buttonRightShoulderPressedValue, c->buttonRightShoulderIsMask, report, GAMEPAD_RIGHT_SHOULDER);
+    val |= processButton(c->buttonSelectReport, c->buttonSelectPressedValue, c->buttonSelectIsMask, report, GAMEPAD_SELECT);
+    val |= processButton(c->buttonStartReport, c->buttonStartPressedValue, c->buttonStartIsMask, report, GAMEPAD_START);
+    val |= processButton(c->buttonUpReport, c->buttonUpPressedValue, c->buttonUpIsMask, report, GAMEPAD_UP);
+    val |= processButton(c->buttonDownReport, c->buttonDownPressedValue, c->buttonDownIsMask, report, GAMEPAD_DOWN);
+    val |= processButton(c->buttonLeftReport, c->buttonLeftPressedValue, c->buttonLeftIsMask, report, GAMEPAD_LEFT);
+    val |= processButton(c->buttonRightReport, c->buttonRightPressedValue, c->buttonRightIsMask, report, GAMEPAD_RIGHT);
+    joystickButtons = val;
+}
+
+static void process_joystick_report(size_t len, const uint8_t *report, uint16_t productId, uint16_t vendorId)
+{
     //debug print report data
-    debug_printf("joyrstick report: ");
+    debug_printf("joyrstick report productid %d vendorid %d: ", productId, vendorId);
     for (int i = 0; i < len; i++) 
     {
       debug_printf("%#02x",report[i]);
@@ -361,6 +454,17 @@ static void process_joystick_report(size_t len, const uint8_t *report)
           
     }
     debug_printf("\n");
+
+    for (int i = 0; i < sizeof(GamePadConfigs); i++)
+    {
+        if( (GamePadConfigs[i].vendorid == vendorId) && (GamePadConfigs[i].productid == productId))
+        {
+            process_joystic_gamepadconfig(i, report);
+            return;
+        }
+    }
+    //default config
+    process_joystic_gamepadconfig(0, report);
 }
 
 //--------------------------------------------------------------------+
@@ -373,7 +477,7 @@ static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t c
     uint8_t const rpt_count = hid_info[instance].report_count;
     tuh_hid_report_info_t* rpt_info_arr = hid_info[instance].report_info;
     tuh_hid_report_info_t* rpt_info = NULL;
-
+ 
     if ( rpt_count == 1 && rpt_info_arr[0].report_id == 0)
     {
         // Simple report without report ID as 1st byte
@@ -425,9 +529,12 @@ static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t c
                 process_mouse_report( (hid_mouse_report_t const*) report );
                 break;
 
-            case HID_USAGE_DESKTOP_JOYSTICK: // specific to https://www.adafruit.com/product/6285
-                process_joystick_report( (size_t) len, report );
+            case HID_USAGE_DESKTOP_GAMEPAD:
+            case HID_USAGE_DESKTOP_JOYSTICK:
+                process_joystick_report( (size_t) len, report, hid_info[instance].productId, hid_info[instance].vendorId );
                 break;
+            
+            
 
             default:
                 debug_printf("HID receive report usage=%d\r\n", rpt_info->usage);

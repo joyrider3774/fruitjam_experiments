@@ -1,5 +1,6 @@
 //FOR FRUITJAM
-
+//for joypads need to use generic joypads like the snes controller from adafruit
+//if you have another generic joypad need to your config to the GamePadConfigs array
 #include <pio_usb.h>
 #include <tusb.h>
 #include <Adafruit_TinyUSB.h>
@@ -117,6 +118,20 @@ void loop()
   tft.println(Text);
 
   tft.fillRect(mousex -2, mousey-2, 4, 4, tft.color565(255,0,255));
+
+  tft.printf("GAMEPAD_LEFT: %s\n", gamepadButtonPressed(GAMEPAD_LEFT) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_RIGHT: %s\n", gamepadButtonPressed(GAMEPAD_RIGHT) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_UP: %s\n", gamepadButtonPressed(GAMEPAD_UP) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_DOWN: %s\n", gamepadButtonPressed(GAMEPAD_DOWN) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_A: %s\n", gamepadButtonPressed(GAMEPAD_A) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_B: %s\n", gamepadButtonPressed(GAMEPAD_B) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_X: %s\n", gamepadButtonPressed(GAMEPAD_X) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_Y: %s\n", gamepadButtonPressed(GAMEPAD_Y) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_LEFT_SHOULDER:  %s\n", gamepadButtonPressed(GAMEPAD_LEFT_SHOULDER) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_RIGHT_SHOULDER: %s\n", gamepadButtonPressed(GAMEPAD_RIGHT_SHOULDER) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_SELECT: %s\n", gamepadButtonPressed(GAMEPAD_SELECT) ? "pressed": "not pressed");
+  tft.printf("GAMEPAD_START: %s\n", gamepadButtonPressed(GAMEPAD_START) ? "pressed": "not pressed");
+    
 
   if(keyPressed(KEY_DOWN))
     setMouse(getMouseX(), getMouseY() + 1);
