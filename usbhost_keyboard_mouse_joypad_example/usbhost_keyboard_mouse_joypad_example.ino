@@ -6,6 +6,7 @@
 #include <Adafruit_TinyUSB.h>
 #include <Adafruit_dvhstx.h>
 #include "usbh_processor.h"
+#include "hardware/irq.h"
 
 #if defined(ADAFRUIT_FEATHER_RP2350_HSTX)
 DVHSTXPinout pinConfig = ADAFRUIT_FEATHER_RP2350_CFG;
@@ -20,6 +21,8 @@ DVHSTXPinout pinConfig = ADAFRUIT_HSTXDVIBELL_CFG;
 // DVHSTX_PINOUT_DEFAULT is available
 DVHSTXPinout pinConfig = DVHSTX_PINOUT_DEFAULT;
 #endif
+
+#define PIN_USB_HOST_VBUS (11u)
 
 #define KEY_SPACE 0x2C
 #define KEY_RIGHT 0x4F
@@ -43,12 +46,23 @@ void KeyboardCallBack(uint8_t scancode, bool pressed)
   lastpressed = pressed;
 }
 
-void setup1()
+void setup()
 {
 #ifdef PIN_5V_EN
   pinMode(PIN_5V_EN, OUTPUT);
   digitalWrite(PIN_5V_EN, PIN_5V_EN_STATE);
 #endif
+
+//not sure if required, doom port did this as well
+#ifdef PIN_USB_HOST_VBUS
+    printf("Enabling USB host VBUS power on GP%d\r\n", PIN_USB_HOST_VBUS);
+    gpio_init(PIN_USB_HOST_VBUS);
+    gpio_set_dir(PIN_USB_HOST_VBUS, GPIO_OUT);
+    gpio_put(PIN_USB_HOST_VBUS, 1);
+#endif
+
+  //same doom port did this as well i guess this fixes usb host stability
+  irq_set_priority(USBCTRL_IRQ, 0xc0);
 
   pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
   pio_cfg.pin_dp = PIN_USB_HOST_DP;
@@ -58,13 +72,13 @@ void setup1()
   delay(4000); //needs to be high enough increase if needed
 }
 
-void loop1()
+void loop()
 {
   USBHost.task();
 }
 
 
-void setup() {
+void setup1() {
   Serial.begin(115200);
   if (!tft.begin()) { // Blink LED if failed
     Serial.printf("failed to setup display\n");
@@ -82,7 +96,7 @@ void setup() {
 
 
 
-void loop() 
+void loop1() 
 {
   if (keyPressed(KEY_SPACE))
   {
