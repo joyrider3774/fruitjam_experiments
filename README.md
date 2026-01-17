@@ -1,5 +1,5 @@
 # fruitjam_experiments
-experiments / test code i used for adafruit fruitjam
+experiments / test code i used for [adafruit fruitjam](https://www.adafruit.com/product/6200)
 
 ## usbhost_keyboard_mouse_example
 example on how to parse usb hid keyboard and mouse using tiny usb's host mode and displaying the output to the screen. 
