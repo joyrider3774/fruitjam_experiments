@@ -20,6 +20,12 @@ DVHSTXPinout pinConfig = ADAFRUIT_HSTXDVIBELL_CFG;
 DVHSTXPinout pinConfig = DVHSTX_PINOUT_DEFAULT;
 #endif
 
+#define KEY_SPACE 0x2C
+#define KEY_RIGHT 0x4F
+#define KEY_LEFT  0x50
+#define KEY_DOWN  0x51
+#define KEY_UP    0x52
+
 Adafruit_USBH_Host USBHost;
 
 DVHSTX16 tft(pinConfig, DVHSTX_RESOLUTION_320x240, true);
@@ -27,8 +33,8 @@ DVHSTX16 tft(pinConfig, DVHSTX_RESOLUTION_320x240, true);
 static int16_t prevmousex = 0;
 static int16_t prevmousey = 0;
 
-uint8_t lastkey = 0;
-bool lastpressed = false;
+volatile uint8_t lastkey = 0;
+volatile bool lastpressed = false;
 
 void KeyboardCallBack(uint8_t scancode, bool pressed)
 {
@@ -59,7 +65,12 @@ void loop1()
 
 void setup() {
   Serial.begin(115200);
-  tft.begin();
+  if (!tft.begin()) { // Blink LED if failed
+    Serial.printf("failed to setup display\n");
+    pinMode(LED_BUILTIN, OUTPUT);
+    for (;;)
+    digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
+  }
   tft.setCursor(0,0);
   tft.fillScreen(tft.color565(255,255,255));
   setMouseRange(0,0, tft.width(), tft.height());
@@ -70,8 +81,9 @@ void setup() {
 
 
 
-void loop() {
-  if (keyPressed(0x2C)) // space key
+void loop() 
+{
+  if (keyPressed(KEY_SPACE))
   {
     tft.fillScreen(tft.color565(0,255,0));
     tft.setCursor(25,25);
@@ -85,7 +97,8 @@ void loop() {
     tft.fillScreen(tft.color565(255,0,0));
   else
     tft.fillScreen(tft.color565(255,255,255)); 
-    tft.setCursor(0,0); 
+  
+  tft.setCursor(0,0); 
   char Text[40];
   if(lastkey != 0)
   {
@@ -104,6 +117,16 @@ void loop() {
   tft.println(Text);
 
   tft.fillRect(mousex -2, mousey-2, 4, 4, tft.color565(255,0,255));
+
+  if(keyPressed(KEY_DOWN))
+    setMouse(getMouseX(), getMouseY() + 1);
+  if(keyPressed(KEY_UP))
+    setMouse(getMouseX(), getMouseY()- 1);
+  if(keyPressed(KEY_LEFT))
+    setMouse(getMouseX()-1, getMouseY());
+  if(keyPressed(KEY_RIGHT))
+    setMouse(getMouseX()+1, getMouseY());
+  
   tft.swap();
 }
 

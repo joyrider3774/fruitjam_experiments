@@ -33,6 +33,14 @@ void setMouse(int16_t x, int16_t y)
 {
     mousex = x;
     mousey = y;
+    if (mousex < mouseRangeMinX) 
+        mousex = mouseRangeMinX;
+    if (mousex > mouseRangeMaxX) 
+        mousex = mouseRangeMaxX;
+    if (mousey < mouseRangeMinY) 
+        mousey = mouseRangeMinY;
+    if (mousey > mouseRangeMaxY) 
+        mousey = mouseRangeMaxY;
 }
 
 int16_t getMouseX()
