@@ -2,7 +2,7 @@
 #include "tusb.h"
 #include "usbh_processor.h"
 
-#define DEBUG_USB
+#undef DEBUG_USB
 
 #define REPORT_NONE 0xFF
 
