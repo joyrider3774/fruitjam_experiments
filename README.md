@@ -14,3 +14,10 @@ The following libraries are required for this example to compile:
 - **Adafruit_TinyUSB**: for usbhost mode for keyboard, joypad and mouse input
 - **Adafruit_TLV320DAC3100**: for I2S sound output
 - **PICO PIO USB:** for usbhost stuff
+
+## i2stones_example
+i2stones is a library / set of functions to play multiple tones, potentially played at the same time using i2s and Adafruit_TLV320DAC3100. 
+I mainly needed this for the port of the crisp game lib portable. The example plays some sound effects and little musical pieces. The code
+was largely created with the help of claude.ai and seems to work fine.
+The following libraries are required for this example to compile:
+-- **Adafruit_TLV320DAC3100**: The driver for the DAC used in the fruitjam
