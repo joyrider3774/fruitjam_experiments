@@ -8,4 +8,9 @@ The system for the mouse can work with any screen size, you can even use it on a
 for joypad's its best that you buy the snes controller from adafruit so it works with that.
 The code will only work for generic input controllers and not xinput (xbox) or playstation controllers or switch controllers at least mine did not get detected.
 I based the code on the doom port for adafruit fruitjam as well as the usbhost example from adafruit themselves
-Adafruit's snes controller bug has been fixed now and (re)tested by Lord Rybec from adafruit discord, Thanks for that
+Adafruit's snes controller bug has been fixed now and (re)tested by Lord Rybec from adafruit discord, Thanks for that.
+The following libraries are required for this example to compile:
+- **Adafruit_dvhstx**: for video output
+- **Adafruit_TinyUSB**: for usbhost mode for keyboard, joypad and mouse input
+- **Adafruit_TLV320DAC3100**: for I2S sound output
+- **PICO PIO USB:** for usbhost stuff
