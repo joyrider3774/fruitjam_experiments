@@ -20,4 +20,4 @@ i2stones is a library / set of functions to play multiple tones, potentially pla
 I mainly needed this for the port of the crisp game lib portable. The example plays some sound effects and little musical pieces. The code
 was largely created with the help of claude.ai and seems to work fine.
 The following libraries are required for this example to compile:
--- **Adafruit_TLV320DAC3100**: The driver for the DAC used in the fruitjam
+- **Adafruit_TLV320DAC3100**: The driver for the DAC used in the fruitjam
